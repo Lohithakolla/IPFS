@@ -1,0 +1,45 @@
+IPFS PRIVATE NETWORK SETUP:
+PRE-REQUESITES:
+IPFS
+4001 – Communication with other nodes
+5001 – API server
+8080 – Gateway server
+
+IPFS-CLUSTER
+9094 – HTTP API endpoint
+9095 – IPFS proxy endpoint
+9096 – Cluster swarm, used for communication between cluster nodes
+
+step-1: Install ipfs on all machines
+wget https://dist.ipfs.io/go-ipfs/v0.4.18/go-ipfs_v0.4.18_linux-amd64.tar.gz 
+tar xvfz go-ipfs_v0.4.18_linux-amd64.tar.gz 
+sudo mv go-ipfs/ipfs /usr/local/bin/ipfs 
+ipfs init 
+ipfs version
+
+step-2: ipfs bootstrap rm --all (run this command all machines)
+
+step-3: ipfs config Addresses.Gateway /ip4/0.0.0.0/tcp/8080
+        ipfs config Addresses.API /ip4/0.0.0.0/tcp/5001
+        export LIBP2P_FORCE_PNET=1
+        (run these commands on all machines)
+step-4: sudo nano /etc/systemd/system/ipfs.service (run this command on all nodes and insert the following content into it.)
+[Unit]
+ Description=IPFS Daemon
+ After=syslog.target network.target remote-fs.target nss-lookup.target
+ [Service]
+ Type=simple
+ ExecStart=/usr/local/bin/ipfs daemon --enable-namesys-pubsub
+ User=root
+ [Install]
+ WantedBy=multi-user.target
+
+step-5: systemctl start ipfs
+
+step6: run ipfs id on node 0 and copy the ip4 address
+
+step-7: run ipfs bootstrap add ip4address
+
+step-8: ipfs swarm peers run this command to show the attached peers
+
+

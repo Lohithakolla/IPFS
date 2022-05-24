@@ -1,0 +1,100 @@
+IPFS PRIVATE NETWORK SETUP:
+PRE-REQUESITES:
+IPFS
+4001 – Communication with other nodes
+5001 – API server
+8080 – Gateway server
+
+IPFS-CLUSTER
+9094 – HTTP API endpoint
+9095 – IPFS proxy endpoint
+9096 – Cluster swarm, used for communication between cluster nodes
+
+step-1: Install ipfs on all machines
+wget https://dist.ipfs.io/go-ipfs/v0.4.18/go-ipfs_v0.4.18_linux-amd64.tar.gz 
+tar xvfz go-ipfs_v0.4.18_linux-amd64.tar.gz 
+sudo mv go-ipfs/ipfs /usr/local/bin/ipfs 
+ipfs init 
+ipfs version
+
+step-2: ipfs bootstrap rm --all (run this command all machines)
+
+step-3: ipfs config Addresses.Gateway /ip4/0.0.0.0/tcp/8080
+        ipfs config Addresses.API /ip4/0.0.0.0/tcp/5001
+        export LIBP2P_FORCE_PNET=1
+        (run these commands on all machines)
+step-4: sudo nano /etc/systemd/system/ipfs.service (run this command on all nodes and insert the following content into it.)
+[Unit]
+ Description=IPFS Daemon
+ After=syslog.target network.target remote-fs.target nss-lookup.target
+ [Service]
+ Type=simple
+ ExecStart=/usr/local/bin/ipfs daemon --enable-namesys-pubsub
+ User=root
+ [Install]
+ WantedBy=multi-user.target
+
+step-5: systemctl start ipfs (run this command on all nodes)
+
+step6: run ipfs id on node 0 and copy the ip4 address
+
+step-7: ipfs bootstrap add ip4address(run this command on all nodes except node 0)
+
+step-8: ipfs swarm peers (run this command to show the attached peers)
+
+step-9: creating cluster on private ipfs network
+cd /root/
+wget https://dist.ipfs.io/ipfs-cluster-ctl/v0.7.0/ipfs-cluster-ctl_v0.7.0_linux-amd64.tar.gz
+tar -zxvf ipfs-cluster-ctl_v0.7.0_linux-amd64.tar.gz
+cp ipfs-cluster-ctl/ipfs-cluster-ctl /bin/
+wget https://dist.ipfs.io/ipfs-cluster-service/v0.7.0/ipfs-cluster-service_v0.7.0_linux-amd64.tar.gz
+tar -zxvf ipfs-cluster-service_v0.7.0_linux-amd64.tar.gz
+cp ipfs-cluster-service/ipfs-cluster-service /bin/
+export IPFS_CLUSTER_PATH=/root/.ipfs-cluster/
+ipfs-cluster-service init
+nano /root/.ipfs-cluster-service.json
+change secret value to the node 0 secret value for all nodes
+run these commands on all nodes
+step-10:
+nano /usr/lib/systemd/system/ipfsc.service(run this command on all nodes)
+insert the below content into the node 0
+[Unit]
+Description=IPFS-Cluster Daemon
+Requires=ipfs
+After=syslog.target network.target remote-fs.target nss-lookup.target ipfs
+[Service]
+Type=simple
+ExecStart=/bin/ipfs-cluster-service daemon
+User=root
+[Install]
+WantedBy=multi-user.target
+
+systemctl restart ipfsc (run thiscommand on node 0)
+systemctl status ipfsc (run this command on node 0)
+copy the ip4 address
+
+insert the following content into remaining nodes
+[Unit]
+Description=IPFS-Cluster Daemon
+Requires=ipfs
+After=syslog.target network.target remote-fs.target nss-lookup.target ipfs
+[Service]
+Type=simple
+ExecStart=/bin/ipfs-cluster-service daemon --bootstrap ip4address
+User=root
+[Install]
+WantedBy=multi-user.target
+
+systemctl restart ipfsc
+systemctl status ipfsc
+run these commands on remaining nodes
+
+ipfs-cluster-ctl peers ls (run this command on node 0 to check peers)
+
+step-11: upload file to the cluster
+ipfs-cluster-ctl add <filename>
+ipfs-cluster-ctl pin ls
+to list the files added to the cluster
+
+
+
